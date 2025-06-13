@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OpenFront Shortcuts",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Assign shortcut to open front game.",
   "author": "Mohamed Moawia (Shalaga44) <shalaga44@e.email>",
   "permissions": [
@@ -32,11 +32,11 @@
       },
       "description": "SAM Launcher"
     },
-    "select_warship": {
+    "select_port": {
       "suggested_key": {
-        "default": "Alt+W"
+        "default": "Alt+P"
       },
-      "description": "Warship"
+      "description": "Port"
     },
     "select_silo": {
       "suggested_key": {
