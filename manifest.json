@@ -26,11 +26,11 @@
       },
       "description": "Atom Bomb"
     },
-    "select_h_bomb": {
+    "select_sam": {
       "suggested_key": {
-        "default": "Alt+H"
+        "default": "Alt+S"
       },
-      "description": "Hydrogen Bomb"
+      "description": "SAM Launcher"
     },
     "select_warship": {
       "suggested_key": {
