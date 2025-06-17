@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OpenFront Shortcuts",
-  "version": "1.2",
+  "version": "1.3",
   "description": "Assign shortcut to open front game.",
   "author": "Mohamed Moawia (Shalaga44) <shalaga44@e.email>",
   "permissions": [
@@ -21,28 +21,35 @@
   ],
   "commands": {
     "select_atom_bomb": {
-      "suggested_key": {
-        "default": "Alt+B"
-      },
+      "suggested_key": { "default": "Alt+B" },
       "description": "Atom Bomb"
     },
     "select_sam": {
-      "suggested_key": {
-        "default": "Alt+S"
-      },
+      "suggested_key": { "default": "Alt+S" },
       "description": "SAM Launcher"
     },
     "select_port": {
-      "suggested_key": {
-        "default": "Alt+P"
-      },
+      "suggested_key": { "default": "Alt+P" },
       "description": "Port"
     },
     "select_silo": {
-      "suggested_key": {
-        "default": "Alt+I"
-      },
-      "description": "Silo"
+      "suggested_key": { "default": "Alt+I" },
+      "description": "Missile Silo"
+    },
+    "select_mirv": {
+      "description": "MIRV"
+    },
+    "select_h_bomb": {
+      "description": "Hydrogen Bomb"
+    },
+    "select_warship": {
+      "description": "Warship"
+    },
+    "select_defense": {
+      "description": "Defense Post"
+    },
+    "select_city": {
+      "description": "City"
     }
   },
   "action": {
