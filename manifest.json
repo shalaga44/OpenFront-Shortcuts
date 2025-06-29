@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OpenFront Shortcuts",
-  "version": "1.3",
+  "version": "1.4",
   "description": "Assign shortcut to open front game.",
   "author": "Mohamed Moawia (Shalaga44) <shalaga44@e.email>",
   "permissions": [
@@ -14,8 +14,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://openfront.io/*", "http://localhost:9000/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://openfront.io/*",
+        "https://*.openfront.io/*",
+        "http://localhost:9000/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
