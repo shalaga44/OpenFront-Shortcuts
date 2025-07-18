@@ -1,53 +1,54 @@
 // background.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Listens for any of our registered commands (e.g. "select_atom_bomb", "select_mirv", etc.).
-// When one fires, we send a message { action: "selectBuildItem", name: "<Item>" }
+// When one fires, we send a message { action: "selectBuildItem", id: "<data-id>" }
 // to the content script in the active tab (must match https://openfront.io/*).
 // ─────────────────────────────────────────────────────────────────────────────
 
 chrome.commands.onCommand.addListener((command) => {
-  // Map each command name to its exact build‐menu item name:
-  //   "Atom Bomb", "MIRV", "Hydrogen Bomb", "Warship",
-  //   "Port", "Missile Silo", "SAM Launcher", "Defense Post", "City"
-  let itemName;
+  // Map our commands to the exact data-id values in the radial submenu:
+  let sliceId;
   switch (command) {
     case "select_atom_bomb":
-      itemName = "Atom Bomb";
+      sliceId = "build_Atom Bomb";
       break;
     case "select_mirv":
-      itemName = "MIRV";
+      sliceId = "build_MIRV";
       break;
     case "select_h_bomb":
-      itemName = "Hydrogen Bomb";
+      sliceId = "build_Hydrogen Bomb";
       break;
     case "select_warship":
-      itemName = "Warship";
+      sliceId = "build_Warship";
       break;
     case "select_port":
-      itemName = "Port";
+      sliceId = "build_Port";
       break;
     case "select_silo":
-      itemName = "Missile Silo";
+      sliceId = "build_Missile Silo";
       break;
     case "select_sam":
-      itemName = "SAM Launcher";
+      sliceId = "build_SAM Launcher";
       break;
     case "select_defense":
-      itemName = "Defense Post";
+      sliceId = "build_Defense Post";
       break;
     case "select_city":
-      itemName = "City";
+      sliceId = "build_City";
+      break;
+   case "select_factory":
+      sliceId = "build_Factory";
       break;
     default:
       return; // unknown command
   }
 
-  // Query the active tab in the current window, then send our message:
+  // Query the active tab, then send our message:
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || tabs.length === 0) return;
     chrome.tabs.sendMessage(tabs[0].id, {
       action: "selectBuildItem",
-      name: itemName
+      id: sliceId
     });
   });
 });

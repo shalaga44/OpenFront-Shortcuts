@@ -4,59 +4,47 @@
 //
 // 1) Tracks the last mouse position so that when a build-shortcut fires, we know
 //    where to simulate the right-click.
-// 2) Listens for messages from background.js (action: "selectBuildItem") and
-//    runs the “right-click → Build slice → specific build-item” flow, locating
-//    the build-item by its visible name, not by index.
+// 2) Listens for messages from background.js (action: "selectBuildItem", id: "...")
+//    and runs the “right-click → Build slice → second-level slice” flow.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────────
 // STEP 1: Track the last mouse position so we know where to right-click.
-// ─────────────────────────────────────────────────────────────────────────────
-document.addEventListener("mousemove", (e) => {
+document.addEventListener("mousemove", e => {
   window._lastMouseEvent = e;
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STEP 2: Listen for messages from background.js. When action === "selectBuildItem",
-//         call handleMenuSequence(itemName).
-// ─────────────────────────────────────────────────────────────────────────────
+// STEP 2: Listen for messages from background.js.
+// If we get { action: "selectBuildItem", id: "<data-id>" }, run the flow:
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "selectBuildItem" && typeof request.name === "string") {
-    handleMenuSequence(request.name);
+  if (request.action === "selectBuildItem" && typeof request.id === "string") {
+    handleMenuSequence(request.id);
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STEP 3: Main orchestrator — the 3-step flow for any build item named itemName:
-//   1) Simulate right-click at the last mouse position → opens radial menu.
-//   2) After ~300 ms, click the “Build” slice (path[data-name="build"]).
-//   3) After ~300 ms, click the <button.build-button> whose
-//      <span.build-name> exactly matches itemName, inside <build-menu>’s shadow DOM.
-// ─────────────────────────────────────────────────────────────────────────────
-function handleMenuSequence(itemName) {
+// STEP 3: Orchestrator — right-click, click “Build”, then click the requested slice.
+function handleMenuSequence(sliceId) {
   const mouseEvent = window._lastMouseEvent;
   if (!mouseEvent) {
     console.warn("⚠️ No mouse position available—move your cursor over the game first.");
     return;
   }
 
-  // Step 1: Right-click at (x, y) to open the radial menu.
+  // 1) Open the radial menu
   simulateRightClickAt(mouseEvent.clientX, mouseEvent.clientY);
 
-  // Step 2: Wait for the radial menu to fully render, then click “Build” slice.
+  // 2) Wait ~300ms for it to render, then click the “Build” slice
   setTimeout(() => {
     clickGeneralMenuBuildEntry();
 
-    // Step 3: Wait again for the build submenu to render, then click by name.
+    // 3) Wait another ~300ms, then click the second-level slice by data-id
     setTimeout(() => {
-      clickBuildItemInsideShadowDOM(itemName);
-    }, 300); // ⏱ If build submenu is slow, bump to 500–700 ms.
-  }, 300);   // ⏱ If radial menu is slow, bump to 500–700 ms.
+      clickSecondLevelSlice(sliceId);
+    }, 300);
+  }, 300);
 }
 
 /**
  * Simulates a right-click (mousedown → mouseup → contextmenu) at absolute coords (x, y).
- * Opens the game’s custom radial context menu at that spot.
  */
 function simulateRightClickAt(x, y) {
   const el = document.elementFromPoint(x, y);
@@ -64,115 +52,62 @@ function simulateRightClickAt(x, y) {
     console.warn(`⚠️ Could not find element at (${x}, ${y}) to right-click.`);
     return;
   }
-
-  const opts = {
-    bubbles: true,
-    cancelable: true,
-    clientX: x,
-    clientY: y,
-    buttons: 2 // “2” = right mouse button
-  };
-
-  el.dispatchEvent(new MouseEvent("mousedown",   opts));
-  el.dispatchEvent(new MouseEvent("mouseup",     opts));
+  const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: 2 };
+  el.dispatchEvent(new MouseEvent("mousedown", opts));
+  el.dispatchEvent(new MouseEvent("mouseup",   opts));
   el.dispatchEvent(new MouseEvent("contextmenu", opts));
-
   console.log(`✅ Simulated right-click at (${x}, ${y}).`);
 }
 
 /**
  * Finds and clicks the “Build” slice inside the radial menu:
- *   <path data-name="build"> within the SVG. Computes its center and fires
- *   a left-click there so the game registers “Build.”
+ *   path.menu-item-path[data-id="build"]
  */
 function clickGeneralMenuBuildEntry() {
-  const buildPath = document.querySelector('path[data-name="build"]');
+  const buildPath = document.querySelector('path.menu-item-path[data-id="build"]');
   if (!buildPath) {
-    console.warn(`⚠️ Could not find <path data-name="build"> in the radial menu.`);
+    console.warn(`⚠️ Could not find <path data-id="build"> in the radial menu.`);
     return;
   }
-
   const rect = buildPath.getBoundingClientRect();
-  const centerX = rect.left + rect.width  / 2;
-  const centerY = rect.top  + rect.height / 2;
-
-  simulateLeftClickAt(buildPath, centerX, centerY);
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+  simulateLeftClickAt(buildPath, cx, cy);
   console.log("✅ Clicked the radial menu’s Build slice.");
 }
 
 /**
- * Clicks the build-menu button whose <span class="build-name"> exactly matches itemName,
- * inside <build-menu>’s shadow DOM. If no match is found (or it’s disabled), logs a warning.
- *
- * Below are all possible build-menu items (order may change, but names remain constant):
- *   0: Atom Bomb
- *   1: MIRV
- *   2: Hydrogen Bomb
- *   3: Warship
- *   4: Port
- *   5: Missile Silo
- *   6: SAM Launcher
- *   7: Defense Post
- *   8: City
- *
- * @param {string} itemName  The exact visible text of <span class="build-name">, e.g. "Atom Bomb"
+ * Clicks the second-level slice in the radial menu matching data-id="{{sliceId}}"
+ * e.g. "build_Atom Bomb", "build_City", etc. Retries up to ~10 times if not yet present.
  */
-function clickBuildItemInsideShadowDOM(itemName) {
-  try {
-    const buildMenuEl = document.querySelector("body > build-menu");
-    if (!buildMenuEl || !buildMenuEl.shadowRoot) {
-      console.warn("⚠️ <build-menu> or its shadowRoot not found.");
-      return;
+function clickSecondLevelSlice(sliceId) {
+  const selector = `path.menu-item-path[data-id="${sliceId}"]`;
+  let attempts = 0;
+  const maxAttempts = 10;
+  const attemptClick = () => {
+    const slice = document.querySelector(selector);
+    if (slice) {
+      const rect = slice.getBoundingClientRect();
+      const cx = rect.left + rect.width  / 2;
+      const cy = rect.top  + rect.height / 2;
+      simulateLeftClickAt(slice, cx, cy);
+      console.log(`✅ Clicked radial slice: "${sliceId}".`);
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(attemptClick, 200);
+    } else {
+      console.warn(`⚠️ No radial slice found for "${sliceId}" after ${attempts} attempts (selector: ${selector}).`);
     }
-
-    // Query all buttons under .build-row
-    const buttons = buildMenuEl.shadowRoot.querySelectorAll(".build-row > button.build-button");
-    if (!buttons.length) {
-      console.warn("⚠️ No <button.build-button> elements found in <build-menu>.");
-      return;
-    }
-
-    // Look for the first button whose <span.build-name> matches itemName exactly
-    let foundButton = null;
-    for (const btn of buttons) {
-      const nameSpan = btn.querySelector(".build-name");
-      if (nameSpan && nameSpan.textContent.trim() === itemName) {
-        foundButton = btn;
-        break;
-      }
-    }
-
-    if (!foundButton) {
-      console.warn(`⚠️ No build-menu item with name "${itemName}" found.`);
-      return;
-    }
-
-    if (foundButton.disabled) {
-      console.warn(`⚠️ "${itemName}" is disabled and cannot be clicked.`);
-      return;
-    }
-
-    foundButton.click();
-    console.log(`✅ Clicked build-menu item: "${itemName}".`);
-  } catch (err) {
-    console.error("❌ Error clicking build-menu item by name:", err);
-  }
+  };
+  attemptClick();
 }
 
 /**
  * Simulates a left-click (mousedown → mouseup → click) at absolute coords (x, y)
- * on the given target element. Passing both the element and the coords ensures
- * we “hit” its center.
+ * on the given target element.
  */
 function simulateLeftClickAt(target, x, y) {
-  const opts = {
-    bubbles: true,
-    cancelable: true,
-    clientX: x,
-    clientY: y,
-    buttons: 1 // “1” = left mouse button
-  };
-
+  const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: 1 };
   target.dispatchEvent(new MouseEvent("mousedown", opts));
   target.dispatchEvent(new MouseEvent("mouseup",   opts));
   target.dispatchEvent(new MouseEvent("click",     opts));
