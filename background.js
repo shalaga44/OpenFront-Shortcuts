@@ -10,16 +10,16 @@ chrome.commands.onCommand.addListener((command) => {
   let sliceId;
   switch (command) {
     case "select_atom_bomb":
-      sliceId = "build_Atom Bomb";
+      sliceId = "attack_Atom Bomb";
       break;
     case "select_mirv":
-      sliceId = "build_MIRV";
+      sliceId = "attack_MIRV";
       break;
     case "select_h_bomb":
-      sliceId = "build_Hydrogen Bomb";
+      sliceId = "attack_Hydrogen Bomb";
       break;
     case "select_warship":
-      sliceId = "build_Warship";
+      sliceId = "attack_Warship";
       break;
     case "select_port":
       sliceId = "build_Port";

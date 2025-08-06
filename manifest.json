@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OpenFront Shortcuts",
-  "version": "1.5",
+  "version": "1.6",
   "description": "Assign shortcut to open front game.",
   "author": "Mohamed Moawia (Shalaga44) <shalaga44@e.email>",
   "permissions": [

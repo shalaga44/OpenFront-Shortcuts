@@ -7,6 +7,14 @@
 // 2) Listens for messages from background.js (action: "selectBuildItem", id: "...")
 //    and runs the “right-click → Build slice → second-level slice” flow.
 // ─────────────────────────────────────────────────────────────────────────────
+function disableMenuAnimations() {
+  document
+    .querySelectorAll(".menu-container *")
+    .forEach(el => {
+      el.style.transition = "none";
+      el.style.animation  = "none";
+    });
+}
 
 // STEP 1: Track the last mouse position so we know where to right-click.
 document.addEventListener("mousemove", e => {
@@ -17,10 +25,16 @@ document.addEventListener("mousemove", e => {
 // If we get { action: "selectBuildItem", id: "<data-id>" }, run the flow:
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "selectBuildItem" && typeof request.id === "string") {
+   if (busy) {
+      console.warn("⚠️ Build command ignored because another is still in progress.");
+      return;
+    }
+      busy = true;
     handleMenuSequence(request.id);
   }
 });
 
+let busy = false;
 // STEP 3: Orchestrator — right-click, click “Build”, then click the requested slice.
 function handleMenuSequence(sliceId) {
   const mouseEvent = window._lastMouseEvent;
@@ -28,7 +42,10 @@ function handleMenuSequence(sliceId) {
     console.warn("⚠️ No mouse position available—move your cursor over the game first.");
     return;
   }
-
+  //todo:optimize
+  disableMenuAnimations();
+  const centerBtn = document.querySelector('.menu-container .center-button');
+  if (centerBtn) centerBtn.remove();
   // 1) Open the radial menu
   simulateRightClickAt(mouseEvent.clientX, mouseEvent.clientY);
 
@@ -39,8 +56,8 @@ function handleMenuSequence(sliceId) {
     // 3) Wait another ~300ms, then click the second-level slice by data-id
     setTimeout(() => {
       clickSecondLevelSlice(sliceId);
-    }, 300);
-  }, 300);
+    }, 400);
+  }, 400);
 }
 
 /**
@@ -64,8 +81,12 @@ function simulateRightClickAt(x, y) {
  *   path.menu-item-path[data-id="build"]
  */
 function clickGeneralMenuBuildEntry() {
-  const buildPath = document.querySelector('path.menu-item-path[data-id="build"]');
+  const buildAttackPath = document.querySelector('path.menu-item-path[data-id="attack"]');
+  var buildPath = document.querySelector('path.menu-item-path[data-id="build"]');
   if (!buildPath) {
+     buildPath = buildAttackPath
+  }
+   if (!buildPath) {
     console.warn(`⚠️ Could not find <path data-id="build"> in the radial menu.`);
     return;
   }
