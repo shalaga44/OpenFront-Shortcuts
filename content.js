@@ -25,16 +25,10 @@ document.addEventListener("mousemove", e => {
 // If we get { action: "selectBuildItem", id: "<data-id>" }, run the flow:
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "selectBuildItem" && typeof request.id === "string") {
-   if (busy) {
-      console.warn("⚠️ Build command ignored because another is still in progress.");
-      return;
-    }
-      busy = true;
     handleMenuSequence(request.id);
   }
 });
 
-let busy = false;
 // STEP 3: Orchestrator — right-click, click “Build”, then click the requested slice.
 function handleMenuSequence(sliceId) {
   const mouseEvent = window._lastMouseEvent;
